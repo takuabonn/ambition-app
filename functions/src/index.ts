@@ -1,5 +1,4 @@
 import * as admin from "firebase-admin";
-import { Transaction } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { serverDB } from "../../firebase/server";
 
@@ -8,30 +7,30 @@ export const countUpOnSupportAmbition = functions
   .firestore.document(
     "users/{userID}/myAmbitions/{ambitionID}/supportedUsers/{supportedUserID}"
   )
-  .onCreate((snap, context) => {
-    serverDB.runTransaction(async (transaction: Transaction) => {
-      const myAmbitionRef = serverDB
-        .collection("users")
-        .doc(context.params.userID)
-        .collection("myAmbitions")
-        .doc(context.params.ambitionID);
+  .onCreate(async (snap, context) => {
+    const batch = serverDB.batch();
+    const myAmbitionRef = serverDB
+      .collection("users")
+      .doc(context.params.userID)
+      .collection("myAmbitions")
+      .doc(context.params.ambitionID);
 
-      await transaction.update(myAmbitionRef, {
+    batch.update(myAmbitionRef, {
+      support_count: admin.firestore.FieldValue.increment(1),
+    });
+
+    const querySnapshot = await serverDB
+      .collectionGroup("supportedAmbitions")
+      .where("ambition_id", "==", context.params.ambitionID)
+      .get();
+
+    querySnapshot.docs.forEach((docSnapshot) => {
+      batch.update(docSnapshot.ref, {
         support_count: admin.firestore.FieldValue.increment(1),
       });
-
-      const querySnapshot = await serverDB
-        .collection("users")
-        .doc(context.params.userID)
-        .collection("suppotedAmbitions")
-        .where("ambition_id", "==", context.params.ambitionID)
-        .get();
-      querySnapshot.docs.forEach(async (docSnapshot) => {
-        await transaction.update(docSnapshot.ref, {
-          support_count: admin.firestore.FieldValue.increment(1),
-        });
-      });
     });
+
+    await batch.commit();
   });
 
 export const countDownOnunSupportAmbition = functions
@@ -39,29 +38,27 @@ export const countDownOnunSupportAmbition = functions
   .firestore.document(
     "users/{userID}/myAmbitions/{ambitionID}/supportedUsers/{supportedUserID}"
   )
-  .onDelete((snap, context) => {
-    serverDB.runTransaction(async (transaction: Transaction) => {
-      const myAmbitionRef = serverDB
-        .collection("users")
-        .doc(context.params.userID)
-        .collection("myAmbitions")
-        .doc(context.params.ambitionID);
+  .onDelete(async (snap, context) => {
+    const batch = serverDB.batch();
+    const myAmbitionRef = serverDB
+      .collection("users")
+      .doc(context.params.userID)
+      .collection("myAmbitions")
+      .doc(context.params.ambitionID);
 
-      await transaction.update(myAmbitionRef, {
+    batch.update(myAmbitionRef, {
+      support_count: admin.firestore.FieldValue.increment(-1),
+    });
+
+    const querySnapshot = await serverDB
+      .collectionGroup("supportedAmbitions")
+      .where("ambition_id", "==", context.params.ambitionID)
+      .get();
+
+    querySnapshot.docs.forEach((docSnapshot) => {
+      batch.update(docSnapshot.ref, {
         support_count: admin.firestore.FieldValue.increment(-1),
       });
-
-      const querySnapshot = await serverDB
-        .collection("users")
-        .doc(context.params.userID)
-        .collection("suppotedAmbitions")
-        .where("ambition_id", "==", context.params.ambitionID)
-        .get();
-
-      querySnapshot.docs.forEach(async (docSnapshot) => {
-        await transaction.update(docSnapshot.ref, {
-          support_count: admin.firestore.FieldValue.increment(-1),
-        });
-      });
     });
+    await batch.commit();
   });

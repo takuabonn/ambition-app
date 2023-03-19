@@ -4,17 +4,25 @@ import { Inter } from "@next/font/google";
 import { AppHeader } from "@/components/parts/AppHeader";
 import { AmbitionForm } from "@/components/parts/AmbitionForm";
 import { AmbitionList } from "@/components/parts/AmbitionList";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useContext, useMemo, useState } from "react";
+import { MyAmbitionList } from "@/components/parts/MyAmbitionList";
+import { AuthContext } from "@/auth/AuthProvider";
+import { SupportedAmbitionList } from "@/components/parts/SupportedAmbitionList";
 
 const inter = Inter({ subsets: ["latin"] });
 
-type TabItem = "POST_AMBITION" | "All_AMBITION";
+type TabItem =
+  | "POST_AMBITION"
+  | "All_AMBITION"
+  | "MY_AMBITION"
+  | "SUPPORTED_AMBITION";
 
 // eslint-disable-next-line react/display-name
 const MemoedList = memo(() => <AmbitionList />);
 
 export default function Home() {
   const [tab, setTab] = useState<TabItem>("POST_AMBITION");
+  const { userInfo } = useContext(AuthContext);
   return (
     <>
       <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -61,6 +69,7 @@ export default function Home() {
               role="tab"
               aria-controls="settings"
               aria-selected="false"
+              onClick={() => setTab("SUPPORTED_AMBITION")}
             >
               応援している野望
             </button>
@@ -74,6 +83,7 @@ export default function Home() {
               role="tab"
               aria-controls="contacts"
               aria-selected="false"
+              onClick={() => setTab("MY_AMBITION")}
             >
               私の野望
             </button>
@@ -87,6 +97,16 @@ export default function Home() {
         <div className={tab === "All_AMBITION" ? "block" : "hidden"}>
           <AmbitionList />
         </div>
+        {userInfo && (
+          <>
+            <div className={tab === "MY_AMBITION" ? "block" : "hidden"}>
+              <MyAmbitionList />
+            </div>
+            <div className={tab === "SUPPORTED_AMBITION" ? "block" : "hidden"}>
+              <SupportedAmbitionList />
+            </div>
+          </>
+        )}
       </div>
     </>
   );
