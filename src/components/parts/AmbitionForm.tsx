@@ -27,7 +27,6 @@ export const AmbitionForm = () => {
   };
 
   const submitAmbition = () => {
-    console.log("jji");
     const userRef = doc(db, "users", userInfo!.uid);
     const myAmbitionCollectionRef = collection(
       db,
@@ -36,12 +35,11 @@ export const AmbitionForm = () => {
       "myAmbitions"
     );
     setDoc(doc(myAmbitionCollectionRef), {
-      auth: userRef,
+      author: userRef,
       content: content,
       message_of_support: messageOfSupport,
       created_at: serverTimestamp(),
       support_count: increment(0),
-      // createdAt: Timestamp.fromDate(new Date()),
     })
       .then(() => {
         setContent("");

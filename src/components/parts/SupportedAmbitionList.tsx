@@ -31,6 +31,7 @@ import {
   where,
   deleteDoc,
   documentId,
+  Query,
 } from "firebase/firestore";
 import firebase from "firebase/compat/app";
 import InfiniteScroll from "react-infinite-scroller";
@@ -40,16 +41,18 @@ import { httpsCallable } from "firebase/functions";
 import { Ambition, ambitionConverter, StateAmbition } from "types/AmbitionType";
 import { AmbitionCard } from "./AmbitionCard";
 
-export const AmbitionList = () => {
+export const SupportedAmbitionList = () => {
+  const { userInfo } = useContext(AuthContext);
   const { initRead, readMore, ambitionList } = useInfiniteSnapshotListener(
-    collectionGroup(db, "myAmbitions"),
-    "All_AMBITION"
+    collection(db, "users", userInfo!.uid, "supportedAmbitions"),
+    "SUPPORTED_AMBITION"
   );
   const [sentinel, setSentinel] = useState<Ambition>();
+
   useEffect(() => {
     getDocs(
       query(
-        collectionGroup(db, "myAmbitions"),
+        collection(db, "users", userInfo!.uid, "supportedAmbitions"),
         orderBy("created_at", "asc"),
         limit(1)
       ).withConverter(ambitionConverter)

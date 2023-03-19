@@ -1,4 +1,9 @@
-import { FirestoreDataConverter, Timestamp } from "firebase/firestore";
+import {
+  DocumentData,
+  DocumentReference,
+  FirestoreDataConverter,
+  Timestamp,
+} from "firebase/firestore";
 
 export interface StateAmbition {
   id: string;
@@ -8,6 +13,7 @@ export interface StateAmbition {
   user_name: string;
   created_at?: Date;
   is_supported_ambition: boolean;
+  author: DocumentReference<DocumentData>;
 }
 
 export class Ambition {
@@ -16,10 +22,7 @@ export class Ambition {
     readonly content: string,
     readonly message_of_support: string,
     readonly support_count: number,
-    readonly auth: {
-      path: string;
-      id: string;
-    },
+    readonly author: DocumentReference<DocumentData>,
     readonly created_at?: Timestamp
   ) {}
 }
@@ -31,7 +34,7 @@ export const ambitionConverter: FirestoreDataConverter<Ambition> = {
       content: ambition.content,
       message_of_support: ambition.message_of_support,
       support_count: ambition.support_count,
-      auth: ambition.auth,
+      author: ambition.author,
       created_at: ambition.created_at,
     };
   },
@@ -43,7 +46,7 @@ export const ambitionConverter: FirestoreDataConverter<Ambition> = {
       data.content,
       data.message_of_support,
       data.support_count,
-      data.auth,
+      data.author,
       data.created_at
     );
   },
