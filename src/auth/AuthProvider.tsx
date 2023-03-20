@@ -1,6 +1,7 @@
 import { clientAuth, db } from "../../firebase/client";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { createContext, useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 type AuthProps = {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ const AuthContext = createContext<{ userInfo: User | null }>({
 const AuthProvider = ({ children }: AuthProps) => {
   // 認証情報を格納
   const [userInfo, setUserInfo] = useState<User | null>(null);
+  const router = useRouter();
   console.log(userInfo);
 
   useEffect(() => {
@@ -34,14 +36,26 @@ const AuthProvider = ({ children }: AuthProps) => {
         const userDoc = doc(db, "users", user.uid);
         await getDoc(userDoc).then((snap) => {
           if (!snap.exists()) {
-            console.log("作成");
-            setDoc(userDoc, {
-              email: user.email,
-              name: user.displayName,
-              createdAt: serverTimestamp(),
-            });
+            router.push(
+              {
+                pathname: "/UserRegistration",
+                query: {
+                  params: JSON.stringify({
+                    user: user,
+                  }),
+                },
+              },
+              "UserRegistration"
+            );
+            // console.log("作成");
+            // setDoc(userDoc, {
+            //   email: user.email,
+            //   name: user.displayName,
+            //   createdAt: serverTimestamp(),
+            // });
           }
         });
+        router.push("/");
       } else {
         setUserInfo(null);
       }
