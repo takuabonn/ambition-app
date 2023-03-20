@@ -4,10 +4,18 @@ import { Inter } from "@next/font/google";
 import { AppHeader } from "@/components/parts/AppHeader";
 import { AmbitionForm } from "@/components/parts/AmbitionForm";
 import { AmbitionList } from "@/components/parts/AmbitionList";
-import { memo, useCallback, useContext, useMemo, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { MyAmbitionList } from "@/components/parts/MyAmbitionList";
 import { AuthContext } from "@/auth/AuthProvider";
 import { SupportedAmbitionList } from "@/components/parts/SupportedAmbitionList";
+import { useRouter } from "next/router";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,8 +31,34 @@ const MemoedList = memo(() => <AmbitionList />);
 export default function Home() {
   const [tab, setTab] = useState<TabItem>("POST_AMBITION");
   const { userInfo } = useContext(AuthContext);
+  const router = useRouter();
+  useEffect(() => {
+    console.log(userInfo);
+    if (userInfo === null) {
+      router.push("/SignIn");
+    }
+  }, []);
   return (
     <>
+      <div
+        style={{
+          position: "relative",
+          height: "30vw",
+        }}
+      >
+        <Image
+          className="object-cover  w-full"
+          src="/arguing-g992580437_1280.png"
+          alt=""
+          fill
+        />
+        <p className="absolute top-1/2 left-1/2 sm:text-5xl xl:text-8xl inline-block  font-yuji -translate-x-1/2 ">
+          野望を
+        </p>
+        <p className="absolute top-3/4 left-1/2 sm:text-5xl xl:text-8xl inline-block font-yuji -translate-y-1/4">
+          叫べ
+        </p>
+      </div>
       <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
         <ul
           className="flex flex-wrap -mb-px text-sm font-medium text-center justify-center"
@@ -91,14 +125,14 @@ export default function Home() {
         </ul>
       </div>
       <div>
-        <div className={tab === "POST_AMBITION" ? "block" : "hidden"}>
-          <AmbitionForm />
-        </div>
-        <div className={tab === "All_AMBITION" ? "block" : "hidden"}>
-          <AmbitionList />
-        </div>
         {userInfo && (
           <>
+            <div className={tab === "POST_AMBITION" ? "block" : "hidden"}>
+              <AmbitionForm />
+            </div>
+            <div className={tab === "All_AMBITION" ? "block" : "hidden"}>
+              <AmbitionList />
+            </div>
             <div className={tab === "MY_AMBITION" ? "block" : "hidden"}>
               <MyAmbitionList />
             </div>
