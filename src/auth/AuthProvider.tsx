@@ -1,24 +1,33 @@
 import { clientAuth, db } from "../../firebase/client";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { createContext, useEffect, useState } from "react";
+import {
+  doc,
+  DocumentData,
+  DocumentReference,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
+import {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import { useRouter } from "next/router";
+import { UserInfo } from "types/UserTypes";
 
 type AuthProps = {
   children: React.ReactNode;
 };
 
-type User = {
-  uid: string;
-  name: string | null;
-};
-
-const AuthContext = createContext<{ userInfo: User | null }>({
+const AuthContext = createContext<{ userInfo: UserInfo | null }>({
   userInfo: null,
 });
 
 const AuthProvider = ({ children }: AuthProps) => {
   // 認証情報を格納
-  const [userInfo, setUserInfo] = useState<User | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const router = useRouter();
   console.log(userInfo);
 
@@ -27,11 +36,6 @@ const AuthProvider = ({ children }: AuthProps) => {
       console.log(user);
       if (user) {
         console.log(user);
-        setUserInfo({
-          uid: user.uid,
-          name: user.displayName,
-        });
-
         // ユーザーの自動作成
         const userDoc = doc(db, "users", user.uid);
         await getDoc(userDoc).then((snap) => {
@@ -47,12 +51,13 @@ const AuthProvider = ({ children }: AuthProps) => {
               },
               "UserRegistration"
             );
-            // console.log("作成");
-            // setDoc(userDoc, {
-            //   email: user.email,
-            //   name: user.displayName,
-            //   createdAt: serverTimestamp(),
-            // });
+          } else {
+            setUserInfo({
+              uid: user.uid,
+              name: snap.data().name,
+              userDocRef: userDoc,
+              avatar_image_url: snap.data().avatar_image_url,
+            });
           }
         });
         router.push("/");

@@ -22,21 +22,24 @@ import {
   where,
 } from "firebase/firestore";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Ambition, ambitionConverter, StateAmbition } from "types/AmbitionType";
+import {
+  Ambition,
+  ambitionConverter,
+  StateAmbition,
+  SupportedAmbition,
+} from "types/AmbitionType";
 import { AuthContext } from "@/auth/AuthProvider";
 import { ListType } from "types/AmbitionListType";
-
-const now = new Date();
+import { UserInfo } from "types/UserTypes";
 
 const sleep = (sec: number) =>
   new Promise((resolve) => setTimeout(resolve, sec * 1000));
 
-const convertToAmbition = async (
-  change: DocumentChange<Ambition>
-): Promise<StateAmbition> => {
+const convertToAmbition = async (change: DocumentChange<DocumentData>) => {
   const data = change.doc.data() as Ambition;
-  const userRef = await getDoc(doc(db, data.author.path));
+  const userRef = await getDoc(data.author);
   const userName: string = userRef.data()?.name;
+  const avatarImagePath: string = userRef.data()?.avatar_image_url;
 
   const supportedAmbitionDocSnap = await getDoc(
     doc(db, data.author.path, "supportedAmbitions", data.id)
@@ -46,21 +49,48 @@ const convertToAmbition = async (
     created_at: data.created_at?.toDate(),
     user_name: userName,
     is_supported_ambition: supportedAmbitionDocSnap.exists(),
+    avatar_image_path: avatarImagePath,
+  };
+};
+
+const convertToMyAmbition = async (
+  change: DocumentChange<DocumentData>,
+  userInfo: UserInfo | null
+) => {
+  const data = change.doc.data() as Ambition;
+  const supportedAmbitionDocSnap = await getDoc(
+    doc(db, data.author.path, "supportedAmbitions", data.id)
+  );
+  return {
+    ...data,
+    created_at: data.created_at?.toDate(),
+    user_name: userInfo!.name,
+    is_supported_ambition: supportedAmbitionDocSnap.exists(),
+    avatar_image_path: userInfo!.avatar_image_url,
   };
 };
 
 const convertToSupportedAmbition = async (
-  change: DocumentChange<Ambition>
-): Promise<StateAmbition> => {
-  const data = change.doc.data() as Ambition;
-  const userRef = await getDoc(doc(db, data.author.path));
-  const userName: string = userRef.data()?.name;
+  change: DocumentChange<DocumentData>
+) => {
+  const data = change.doc.data() as SupportedAmbition;
+
+  const ambitionDocSnapshot = await getDoc(doc(db, "ambitions", data.id));
+
+  const ambition = ambitionDocSnapshot.data() as Ambition;
+
+  const userRef = await getDoc(ambition.author);
+  const user = userRef.data();
+  const userName: string = user?.name;
+  const avatarImagePath: string = user?.avatar_image_url;
 
   return {
-    ...data,
+    ...ambition,
+    id: data.id,
     created_at: data.created_at?.toDate(),
     user_name: userName,
     is_supported_ambition: true,
+    avatar_image_path: avatarImagePath,
   };
 };
 
@@ -68,32 +98,38 @@ export const useInfiniteSnapshotListener = (
   ambitionQuery: Query<DocumentData>,
   listType: ListType
 ) => {
+  const now = new Date();
   const { userInfo } = useContext(AuthContext);
 
   const unsubscribes = useRef<Unsubscribe[]>([]);
   const [ambitionList, setAmbitionList] = useState<StateAmbition[] | []>([]);
 
   const onSnapshotFun = useCallback(
-    async (snapshot: QuerySnapshot<Ambition>, pasted: number) => {
+    async (
+      snapshot: QuerySnapshot<Ambition> | QuerySnapshot<SupportedAmbition>,
+      pasted: number
+    ) => {
       let added: StateAmbition[] = [];
       let modified: StateAmbition[] = [];
       let deleted: StateAmbition[] = [];
-
       for (let change of snapshot.docChanges()) {
         let target: StateAmbition | undefined = undefined;
         switch (listType) {
           case "All_AMBITION":
             target = await convertToAmbition(change);
+            console.log("all");
+            break;
+          case "MY_AMBITION":
+            target = await convertToMyAmbition(change, userInfo);
+            console.log("my");
             break;
           case "SUPPORTED_AMBITION":
             target = await convertToSupportedAmbition(change);
-          case "MY_AMBITION":
-            target = await convertToAmbition(change);
-            break;
         }
 
         if (target !== undefined) {
           if (change.type === "added") {
+            console.log(target);
             added.push(target);
           } else if (change.type === "modified") {
             modified.push(target);
@@ -112,6 +148,7 @@ export const useInfiniteSnapshotListener = (
         }
       }
       if (modified.length > 0 && deleted.length === 0) {
+        console.log(modified);
         // 変更時
         setAmbitionList((prev) => {
           return prev.map((ambition) => {
@@ -174,10 +211,10 @@ export const useInfiniteSnapshotListener = (
   // 初回ロード
   const initRead = useCallback(() => {
     console.log(userInfo);
-    // 未来の野望の読み込み
-    unsubscribes.current.push(registLatestAmbitionListener());
     // 現時刻よりも古いデータをあらかじめ数件読み込む
     unsubscribes.current.push(registPastAmbitionListener(now));
+    // 未来の野望の読み込み
+    unsubscribes.current.push(registLatestAmbitionListener());
   }, [registPastAmbitionListener, registLatestAmbitionListener]);
 
   // スクロール時、追加購読するためのリスナー
@@ -202,6 +239,7 @@ export const useInfiniteSnapshotListener = (
 
   useEffect(() => {
     return () => {
+      // console.log("clear");
       clear();
     };
   }, [clear]);
