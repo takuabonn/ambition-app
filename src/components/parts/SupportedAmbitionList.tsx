@@ -50,6 +50,7 @@ export const SupportedAmbitionList = () => {
   const [sentinel, setSentinel] = useState<Ambition>();
 
   useEffect(() => {
+    console.log("はい");
     getDocs(
       query(
         collection(db, "users", userInfo!.uid, "supportedAmbitions"),
@@ -57,9 +58,15 @@ export const SupportedAmbitionList = () => {
         limit(1)
       ).withConverter(ambitionConverter)
     ).then((querySnapshot) => {
-      setSentinel(querySnapshot.docs.map((doc) => doc.data())[0]);
+      setSentinel(
+        querySnapshot.docs.map((doc) => {
+          console.log(doc.data());
+          return doc.data();
+        })[0]
+      );
     });
   }, []);
+  console.log(ambitionList, sentinel);
   // 初回読み込み
   useEffect(() => {
     initRead();
@@ -68,6 +75,7 @@ export const SupportedAmbitionList = () => {
   const hasMore = sentinel
     ? !Boolean(ambitionList.find((m) => m.id === sentinel.id))
     : false;
+  console.log(hasMore);
 
   return (
     <div className="w-9/12 h-96 mx-auto mt-5 mb-16 overflow-y-scroll">

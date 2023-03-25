@@ -13,6 +13,7 @@ export interface StateAmbition {
   user_name: string;
   created_at?: Date;
   is_supported_ambition: boolean;
+  avatar_image_path: string;
   author: DocumentReference<DocumentData>;
 }
 
@@ -51,3 +52,31 @@ export const ambitionConverter: FirestoreDataConverter<Ambition> = {
     );
   },
 };
+
+export class SupportedAmbition {
+  constructor(
+    readonly id: string,
+    readonly ambition_id: string,
+    readonly created_at?: Timestamp
+  ) {}
+}
+
+export const supportedAmbitionConverter: FirestoreDataConverter<SupportedAmbition> =
+  {
+    toFirestore(supportedAmbition: SupportedAmbition) {
+      return {
+        id: supportedAmbition.id,
+        ambition_id: supportedAmbition.ambition_id,
+        created_at: supportedAmbition.created_at,
+      };
+    },
+    fromFirestore(snapshot, options): SupportedAmbition {
+      const data = snapshot.data(options);
+
+      return new SupportedAmbition(
+        snapshot.id,
+        data.ambition_id,
+        data.created_at
+      );
+    },
+  };

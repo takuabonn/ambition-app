@@ -42,14 +42,15 @@ import { AmbitionCard } from "./AmbitionCard";
 
 export const AmbitionList = () => {
   const { initRead, readMore, ambitionList } = useInfiniteSnapshotListener(
-    collectionGroup(db, "myAmbitions"),
+    collection(db, "ambitions"),
     "All_AMBITION"
   );
+  console.log("list");
   const [sentinel, setSentinel] = useState<Ambition>();
   useEffect(() => {
     getDocs(
       query(
-        collectionGroup(db, "myAmbitions"),
+        collection(db, "ambitions"),
         orderBy("created_at", "asc"),
         limit(1)
       ).withConverter(ambitionConverter)

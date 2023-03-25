@@ -133,9 +133,11 @@ export default function Home() {
             <div className={tab === "All_AMBITION" ? "block" : "hidden"}>
               <AmbitionList />
             </div>
+
             <div className={tab === "MY_AMBITION" ? "block" : "hidden"}>
               <MyAmbitionList />
             </div>
+
             <div className={tab === "SUPPORTED_AMBITION" ? "block" : "hidden"}>
               <SupportedAmbitionList />
             </div>
