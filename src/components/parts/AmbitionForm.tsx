@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   increment,
+  runTransaction,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -26,30 +27,24 @@ export const AmbitionForm = () => {
     setMessageOfSupport(() => e.target.value);
   };
 
-  const submitAmbition = () => {
-    console.log("jji");
-    const userRef = doc(db, "users", userInfo!.uid);
-    const myAmbitionCollectionRef = collection(
-      db,
-      "users",
-      userInfo!.uid,
-      "myAmbitions"
-    );
-    setDoc(doc(myAmbitionCollectionRef), {
-      auth: userRef,
-      content: content,
-      message_of_support: messageOfSupport,
-      created_at: serverTimestamp(),
-      support_count: increment(0),
-      // createdAt: Timestamp.fromDate(new Date()),
-    })
-      .then(() => {
+  const submitAmbition = async () => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const ambitionCollectionRef = collection(db, "ambitions");
+        const ambitionDocRef = doc(ambitionCollectionRef);
+        transaction.set(ambitionDocRef, {
+          author: userInfo!.userDocRef,
+          content: content,
+          message_of_support: messageOfSupport,
+          created_at: serverTimestamp(),
+          support_count: increment(0),
+        });
         setContent("");
         setMessageOfSupport("応援する");
-      })
-      .catch(() => {
-        alert("登録に失敗しました");
       });
+    } catch (error) {
+      alert(error);
+    }
   };
 
   return (
@@ -95,7 +90,7 @@ export const AmbitionForm = () => {
                   {content}
                 </p>
                 <p className="absolute text-center font-yuji text-xl bottom-1 right-1 pr-1">
-                  {"takumi"}
+                  {userInfo.name}
                 </p>
                 <p className="absolute text-center font-yuji text-lg top-1 right-1 pr-1">
                   {"応援数: 0"}

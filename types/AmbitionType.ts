@@ -1,4 +1,9 @@
-import { FirestoreDataConverter, Timestamp } from "firebase/firestore";
+import {
+  DocumentData,
+  DocumentReference,
+  FirestoreDataConverter,
+  Timestamp,
+} from "firebase/firestore";
 
 export interface StateAmbition {
   id: string;
@@ -8,6 +13,8 @@ export interface StateAmbition {
   user_name: string;
   created_at?: Date;
   is_supported_ambition: boolean;
+  avatar_image_path: string;
+  author: DocumentReference<DocumentData>;
 }
 
 export class Ambition {
@@ -16,10 +23,7 @@ export class Ambition {
     readonly content: string,
     readonly message_of_support: string,
     readonly support_count: number,
-    readonly auth: {
-      path: string;
-      id: string;
-    },
+    readonly author: DocumentReference<DocumentData>,
     readonly created_at?: Timestamp
   ) {}
 }
@@ -31,7 +35,7 @@ export const ambitionConverter: FirestoreDataConverter<Ambition> = {
       content: ambition.content,
       message_of_support: ambition.message_of_support,
       support_count: ambition.support_count,
-      auth: ambition.auth,
+      author: ambition.author,
       created_at: ambition.created_at,
     };
   },
@@ -43,8 +47,36 @@ export const ambitionConverter: FirestoreDataConverter<Ambition> = {
       data.content,
       data.message_of_support,
       data.support_count,
-      data.auth,
+      data.author,
       data.created_at
     );
   },
 };
+
+export class SupportedAmbition {
+  constructor(
+    readonly id: string,
+    readonly ambition_id: string,
+    readonly created_at?: Timestamp
+  ) {}
+}
+
+export const supportedAmbitionConverter: FirestoreDataConverter<SupportedAmbition> =
+  {
+    toFirestore(supportedAmbition: SupportedAmbition) {
+      return {
+        id: supportedAmbition.id,
+        ambition_id: supportedAmbition.ambition_id,
+        created_at: supportedAmbition.created_at,
+      };
+    },
+    fromFirestore(snapshot, options): SupportedAmbition {
+      const data = snapshot.data(options);
+
+      return new SupportedAmbition(
+        snapshot.id,
+        data.ambition_id,
+        data.created_at
+      );
+    },
+  };

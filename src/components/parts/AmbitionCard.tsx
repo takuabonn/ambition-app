@@ -8,78 +8,46 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { useCallback } from "react";
+import { useCallback, useContext } from "react";
 import { BiHeart } from "react-icons/bi";
 import { BsHeartFill } from "react-icons/bs";
 import { StateAmbition } from "types/AmbitionType";
+import { AuthContext } from "@/auth/AuthProvider";
 
 type PropsType = {
   ambition: StateAmbition;
 };
 export const AmbitionCard = ({ ambition }: PropsType) => {
+  const { userInfo } = useContext(AuthContext);
   const onSupport = useCallback(async (ambition: StateAmbition) => {
     const batch = writeBatch(db);
-    const userId = clientAuth.currentUser!.uid;
-    const userRef = doc(db, "users", userId);
-    const supportedAmbitionRef = collection(
-      db,
-      "users",
-      userId,
-      "supportedAmbitions"
+    batch.set(
+      doc(db, "users", ambition.author.id, "supportedAmbitions", ambition.id),
+      {
+        ambition_id: ambition.id,
+        created_at: serverTimestamp(),
+      }
     );
-    batch.set(doc(supportedAmbitionRef), {
-      author: userRef.path,
-      ambition_id: ambition.id,
-      content: ambition.content,
-      message_of_support: ambition.message_of_support,
-      support_count: ambition.support_count,
-      created_at: serverTimestamp(),
-    });
-    const supportedUsersRef = collection(
-      db,
-      "users",
-      userId,
-      "myAmbitions",
-      ambition.id,
-      "supportedUsers"
+
+    batch.set(
+      doc(db, "ambitions", ambition.id, "supportedUsers", userInfo!.uid),
+      {
+        user_id: ambition.author.id,
+        created_at: serverTimestamp(),
+      }
     );
-    batch.set(doc(supportedUsersRef), {
-      user_id: userRef.id,
-      created_at: serverTimestamp(),
-    });
 
     await batch.commit();
   }, []);
 
   const unSupport = useCallback(async (ambition: StateAmbition) => {
     const batch = writeBatch(db);
-    const userId = clientAuth.currentUser!.uid;
-    const userRef = doc(db, "users", userId);
-    const supportedAmbitionSnapshot = await getDocs(
-      query(
-        collection(db, "users", userId, "supportedAmbitions"),
-        where("ambition_id", "==", ambition.id)
-      )
+    batch.delete(
+      doc(db, "users", ambition.author.id, "supportedAmbitions", ambition.id)
     );
-    supportedAmbitionSnapshot.forEach((ambitionQueryDocSnapshot) => {
-      batch.delete(ambitionQueryDocSnapshot.ref);
-    });
-
-    const ambitionQuery = query(
-      collection(
-        db,
-        "users",
-        userRef.id,
-        "myAmbitions",
-        ambition.id,
-        "supportedUsers"
-      ),
-      where("user_id", "==", userRef.id)
+    batch.delete(
+      doc(db, "ambitions", ambition.id, "supportedUsers", userInfo!.uid)
     );
-    const ambitionQuerySnapshot = await getDocs(ambitionQuery);
-    ambitionQuerySnapshot.forEach(async (ambitionQueryDocSnapshot) => {
-      batch.delete(ambitionQueryDocSnapshot.ref);
-    });
 
     await batch.commit();
   }, []);

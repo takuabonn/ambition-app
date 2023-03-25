@@ -31,6 +31,7 @@ import {
   where,
   deleteDoc,
   documentId,
+  Query,
 } from "firebase/firestore";
 import firebase from "firebase/compat/app";
 import InfiniteScroll from "react-infinite-scroller";
@@ -40,24 +41,32 @@ import { httpsCallable } from "firebase/functions";
 import { Ambition, ambitionConverter, StateAmbition } from "types/AmbitionType";
 import { AmbitionCard } from "./AmbitionCard";
 
-export const AmbitionList = () => {
+export const SupportedAmbitionList = () => {
+  const { userInfo } = useContext(AuthContext);
   const { initRead, readMore, ambitionList } = useInfiniteSnapshotListener(
-    collection(db, "ambitions"),
-    "All_AMBITION"
+    collection(db, "users", userInfo!.uid, "supportedAmbitions"),
+    "SUPPORTED_AMBITION"
   );
-  console.log("list");
   const [sentinel, setSentinel] = useState<Ambition>();
+
   useEffect(() => {
+    console.log("はい");
     getDocs(
       query(
-        collection(db, "ambitions"),
+        collection(db, "users", userInfo!.uid, "supportedAmbitions"),
         orderBy("created_at", "asc"),
         limit(1)
       ).withConverter(ambitionConverter)
     ).then((querySnapshot) => {
-      setSentinel(querySnapshot.docs.map((doc) => doc.data())[0]);
+      setSentinel(
+        querySnapshot.docs.map((doc) => {
+          console.log(doc.data());
+          return doc.data();
+        })[0]
+      );
     });
   }, []);
+  console.log(ambitionList, sentinel);
   // 初回読み込み
   useEffect(() => {
     initRead();
@@ -66,6 +75,7 @@ export const AmbitionList = () => {
   const hasMore = sentinel
     ? !Boolean(ambitionList.find((m) => m.id === sentinel.id))
     : false;
+  console.log(hasMore);
 
   return (
     <div className="w-9/12 h-96 mx-auto mt-5 mb-16 overflow-y-scroll">

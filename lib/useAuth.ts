@@ -13,7 +13,6 @@ export const useAuth = () => {
   };
   const logOut = () => {
     signOut(clientAuth).then(() => {
-      console.log("ログアウト");
       router.push("/");
     });
   };

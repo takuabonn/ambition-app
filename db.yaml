@@ -1,0 +1,25 @@
+users:
+  id:
+    email
+    name
+    created_at
+    avatar_image_path
+
+    supportedAmbitions:
+      ambitionId:
+        supported_ambition_id # ドキュメントIDと同じ
+        created_at
+
+ambitions:
+  id:
+    content
+    message_of_support
+    created_at
+    support_count
+    user ## DocumentSnapshot<user>
+
+    suppportedUsers:
+      userId:
+        supported_user_id # ドキュメントIDと同じ
+        created_at
+
