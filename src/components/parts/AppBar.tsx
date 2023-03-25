@@ -1,5 +1,6 @@
 import { AuthContext } from "@/auth/AuthProvider";
 import { useAuth } from "lib/useAuth";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { useContext } from "react";
 import { MdAccountCircle } from "react-icons/md";
@@ -20,7 +21,21 @@ export const AppBar = () => {
         {userInfo && (
           <DropDown
             buttonComponent={
-              <MdAccountCircle className="icon cursor-pointer" size="3.0rem" />
+              <div
+                style={{
+                  position: "relative",
+                  minWidth: "60px",
+                  minHeight: "60px",
+                }}
+                className=""
+              >
+                <Image
+                  className="object-cover rounded-full cursor-pointer"
+                  src={userInfo.avatar_image_url}
+                  alt=""
+                  fill
+                />
+              </div>
             }
             dropdownPositionClass="right-5"
           >
